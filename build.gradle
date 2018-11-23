@@ -63,6 +63,10 @@ idea {
   }
 }
 
+tasks.withType(JavaCompile) {
+  options.encoding = 'UTF-8'
+}
+
 test {
   // Allow parallel test execution.
   maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
