@@ -33,6 +33,7 @@ sourceSets {
     java {
       srcDir 'java'
       exclude 'com/google/re2j/super/**'
+      exclude 'us/abbies/b/re2jit/super/**'
     }
   }
   test {
@@ -60,6 +61,7 @@ idea {
     // above. Without this, it complains about duplicated classes that exist both in GWT and non-
     // GWT sources.
     excludeDirs += file('java/com/google/re2j/super')
+    excludeDirs += file('java/us/abbies/b/re2jit/super')
   }
 }
 
@@ -125,14 +127,14 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 def appendMavenCentralMetadata(Node node) {
     node.appendNode('name', 'RE2/J')
     node.appendNode('description', 'Linear time regular expressions for Java')
-    node.appendNode('url', 'http://github.com/google/re2j')
+    node.appendNode('url', 'http://github.com/smmckay/re2jit')
 
     def license = node.appendNode('licenses').appendNode('license')
     license.appendNode('name', 'Go License')
     license.appendNode('url', 'https://golang.org/LICENSE')
     license.appendNode('distribution', 'repo')
 
-    node.appendNode('scm').appendNode('url', 'https://github.com/google/re2j.git')
+    node.appendNode('scm').appendNode('url', 'https://github.com/smmckay/re2jit.git')
 
     def developerInfo = node.appendNode('developers').appendNode('developer')
     developerInfo.appendNode('id', 'dev')
@@ -153,8 +155,8 @@ publishing {
         classifier 'javadoc'
       }
 
-      groupId 'com.google.re2j'
-      artifactId 're2j'
+      groupId 'us.abbies.b.re2jit'
+      artifactId 're2jit'
       version releaseVersion
 
       pom.withXml {
@@ -173,13 +175,13 @@ bintray {
     name = 're2j'
     userOrg = 're2j'
     licenses = ['Go']
-    vcsUrl = 'https://github.com/google/re2j.git'
+    vcsUrl = 'https://github.com/smmckay/re2jit.git'
 
     version {
       name = versionName
-      desc = "RE2/J ${versionName}"
+      desc = "RE2/JIT ${versionName}"
       released = new Date()
-      vcsTag = "re2j-${versionName}"
+      vcsTag = "re2jit-${versionName}"
     }
   }
 

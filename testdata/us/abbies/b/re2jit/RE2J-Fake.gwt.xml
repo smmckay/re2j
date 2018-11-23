@@ -1,0 +1,7 @@
+<module rename-to="re2jit">
+    <inherits name="com.google.gwt.user.User" />
+    <!-- Entry point is necessary to get GWT to build anything at all. -->
+    <entry-point class="us.abbies.b.re2jit.FakeGWTEntryPoint" />
+    <source path=""/>
+    <super-source path="super"/>
+</module>
