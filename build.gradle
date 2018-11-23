@@ -3,7 +3,6 @@ plugins {
   id 'wrapper'
   id 'com.jfrog.bintray' version '1.7.3'
   id 'maven-publish'
-  id 'com.github.sherter.google-java-format' version '0.3.2'
   id 'net.ltgt.errorprone' version '0.0.11'
   id 'idea'
 
@@ -32,8 +31,6 @@ sourceSets {
   main {
     java {
       srcDir 'java'
-      exclude 'com/google/re2j/super/**'
-      exclude 'us/abbies/b/re2jit/super/**'
     }
   }
   test {
@@ -52,16 +49,6 @@ sourceSets {
     java {
       srcDir 'benchmarks'
     }
-  }
-}
-
-idea {
-  module {
-    // Unfortunately, IntelliJ ignores the `exclude` directive in the sourceSet declaration
-    // above. Without this, it complains about duplicated classes that exist both in GWT and non-
-    // GWT sources.
-    excludeDirs += file('java/com/google/re2j/super')
-    excludeDirs += file('java/us/abbies/b/re2jit/super')
   }
 }
 
@@ -87,8 +74,6 @@ configurations.benchmarksCompile {
 
 dependencies {
   testCompile 'junit:junit:4.12'
-  testCompile 'com.google.gwt:gwt-dev:2.8.2'
-  testCompile 'com.google.gwt:gwt-user:2.8.2'
   testCompile 'com.google.truth:truth:0.36'
 
   // Cobertura requires slf4j at runtime
@@ -187,13 +172,3 @@ bintray {
 
   publications = ['mavenJava']
 }
-
-// If Java formatter checks fail, tell the user how to fix them.
-task printFormatHelperMessage {
-  doLast {
-    throw new GradleException('google-java-format is required.\n' +
-        'Use ./gradlew googleJavaFormat to reformat the broken files')
-  }
-}
-verifyGoogleJavaFormat.finalizedBy printFormatHelperMessage
-printFormatHelperMessage.onlyIf { verifyGoogleJavaFormat.state.failure != null }
