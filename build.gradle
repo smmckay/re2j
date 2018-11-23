@@ -3,7 +3,6 @@ plugins {
   id 'wrapper'
   id 'com.jfrog.bintray' version '1.7.3'
   id 'maven-publish'
-  id 'com.github.sherter.google-java-format' version '0.3.2'
   id 'net.ltgt.errorprone' version '0.0.11'
   id 'idea'
 
@@ -32,7 +31,6 @@ sourceSets {
   main {
     java {
       srcDir 'java'
-      exclude 'com/google/re2j/super/**'
     }
   }
   test {
@@ -54,13 +52,8 @@ sourceSets {
   }
 }
 
-idea {
-  module {
-    // Unfortunately, IntelliJ ignores the `exclude` directive in the sourceSet declaration
-    // above. Without this, it complains about duplicated classes that exist both in GWT and non-
-    // GWT sources.
-    excludeDirs += file('java/com/google/re2j/super')
-  }
+tasks.withType(JavaCompile) {
+  options.encoding = 'UTF-8'
 }
 
 test {
@@ -81,8 +74,6 @@ configurations.benchmarksCompile {
 
 dependencies {
   testCompile 'junit:junit:4.12'
-  testCompile 'com.google.gwt:gwt-dev:2.8.2'
-  testCompile 'com.google.gwt:gwt-user:2.8.2'
   testCompile 'com.google.truth:truth:0.36'
 
   // Cobertura requires slf4j at runtime
@@ -121,14 +112,14 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 def appendMavenCentralMetadata(Node node) {
     node.appendNode('name', 'RE2/J')
     node.appendNode('description', 'Linear time regular expressions for Java')
-    node.appendNode('url', 'http://github.com/google/re2j')
+    node.appendNode('url', 'http://github.com/smmckay/re2jit')
 
     def license = node.appendNode('licenses').appendNode('license')
     license.appendNode('name', 'Go License')
     license.appendNode('url', 'https://golang.org/LICENSE')
     license.appendNode('distribution', 'repo')
 
-    node.appendNode('scm').appendNode('url', 'https://github.com/google/re2j.git')
+    node.appendNode('scm').appendNode('url', 'https://github.com/smmckay/re2jit.git')
 
     def developerInfo = node.appendNode('developers').appendNode('developer')
     developerInfo.appendNode('id', 'dev')
@@ -149,8 +140,8 @@ publishing {
         classifier 'javadoc'
       }
 
-      groupId 'com.google.re2j'
-      artifactId 're2j'
+      groupId 'us.abbies.b.re2jit'
+      artifactId 're2jit'
       version releaseVersion
 
       pom.withXml {
@@ -169,25 +160,15 @@ bintray {
     name = 're2j'
     userOrg = 're2j'
     licenses = ['Go']
-    vcsUrl = 'https://github.com/google/re2j.git'
+    vcsUrl = 'https://github.com/smmckay/re2jit.git'
 
     version {
       name = versionName
-      desc = "RE2/J ${versionName}"
+      desc = "RE2/JIT ${versionName}"
       released = new Date()
-      vcsTag = "re2j-${versionName}"
+      vcsTag = "re2jit-${versionName}"
     }
   }
 
   publications = ['mavenJava']
 }
-
-// If Java formatter checks fail, tell the user how to fix them.
-task printFormatHelperMessage {
-  doLast {
-    throw new GradleException('google-java-format is required.\n' +
-        'Use ./gradlew googleJavaFormat to reformat the broken files')
-  }
-}
-verifyGoogleJavaFormat.finalizedBy printFormatHelperMessage
-printFormatHelperMessage.onlyIf { verifyGoogleJavaFormat.state.failure != null }

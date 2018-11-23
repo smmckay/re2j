@@ -1,0 +1,5 @@
+<module rename-to="re2jit">
+    <inherits name="com.google.gwt.user.User" />
+    <source path=""/>
+    <super-source path="super"/>
+</module>
