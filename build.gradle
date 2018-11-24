@@ -5,6 +5,7 @@ plugins {
   id 'maven-publish'
 
   id 'com.github.kt3k.coveralls' version '2.8.2'
+  id 'com.diffplug.gradle.spotless' version '3.16.0'
 }
 
 // The name of the release we're working on. See RELEASING.md for details.
@@ -19,6 +20,22 @@ targetCompatibility = 8
 
 repositories {
   mavenCentral()
+}
+
+spotless {
+    encoding 'UTF-8'
+    
+    java {
+        importOrder 'java', 'javax', ''	// A sequence of package names
+
+        removeUnusedImports()
+
+        eclipse().configFile('spotless.eclipseformat.xml') // XML file dumped out by the Eclipse formatter
+        // Eclipse formatter puts excess whitespace after lambda blocks
+        //    funcThatTakesLambdas(x -> {} , y -> {} )	// what Eclipse does
+        //    funcThatTakesLambdas(x -> {}, y -> {})	// what I wish Eclipse did
+        custom 'Lambda fix', { it.replace('} )', '})').replace('} ,', '},') } 
+    }
 }
 
 sourceSets {
