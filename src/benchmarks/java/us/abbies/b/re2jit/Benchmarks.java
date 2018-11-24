@@ -8,7 +8,7 @@
 // Original Go source here:
 // http://code.google.com/p/go/source/browse/src/pkg/regexp/syntax/exec_test.go
 
-package com.google.re2j;
+package us.abbies.b.re2jit;
 
 import com.google.caliper.BeforeExperiment;
 import com.google.caliper.Benchmark;

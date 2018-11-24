@@ -28,28 +28,11 @@ repositories {
 }
 
 sourceSets {
-  main {
-    java {
-      srcDir 'java'
-    }
-  }
-  test {
-    java {
-      srcDir 'javatests'
-    }
-    resources {
-      srcDir 'testdata'
-    }
-  }
   // Having a separate source set for benchmarks allows us to declare benchmark dependencies
   // separately from the rest of the project. This is useful because as of today (May 2018),
   // Caliper (which runs our benchmarks) has a very old Guava dependency which causes problems
   // for the rest of our test code.
-  benchmarks {
-    java {
-      srcDir 'benchmarks'
-    }
-  }
+  benchmarks
 }
 
 tasks.withType(JavaCompile) {
@@ -95,7 +78,7 @@ configurations.errorprone {
 
 task benchmarks(type: JavaExec) {
   classpath = configurations.benchmarksRuntime + sourceSets.benchmarks.output
-  main = 'com.google.re2j.Benchmarks'
+  main = 'us.abbies.b.re2jit.Benchmarks'
 }
 
 def releaseVersion = '1.2'
