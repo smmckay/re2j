@@ -97,62 +97,32 @@ public class Benchmarks {
     switch (implementation) {
       case JDK: {
         final Pattern p = Pattern.compile(re);
-        return new Matcher() {
-          @Override
-          public boolean match(String input) {
-            return p.matcher(input).matches();
-          }
-        };
+        return input -> p.matcher(input).matches();
       }
       case RE2J: {
         final com.google.re2j.Pattern p = com.google.re2j.Pattern.compile(re);
-        return new Matcher() {
-          @Override
-          public boolean match(String input) {
-            return p.matcher(input).matches();
-          }
-        };
+        return input -> p.matcher(input).matches();
       }
       case RE2JIT: {
         final us.abbies.b.re2jit.Pattern p = us.abbies.b.re2jit.Pattern.compile(re);
-        return new Matcher() {
-          @Override
-          public boolean match(String input) {
-            return p.matcher(input).matches();
-          }
-        };
+        return input -> p.matcher(input).matches();
       }
       case AUTOMATON: {
         RegExp regExp = new RegExp(re);
         final Automaton automaton = regExp.toAutomaton();
-        return new Matcher() {
-          @Override
-          public boolean match(String input) {
-            return automaton.run(input);
-          }
-        };
+        return automaton::run;
       }
       case AUTOMATON_RUN: {
         RegExp regExp = new RegExp(re);
         Automaton automaton = regExp.toAutomaton();
         final RunAutomaton runAutomaton = new RunAutomaton(automaton);
-        return new Matcher() {
-          @Override
-          public boolean match(String input) {
-            return runAutomaton.run(input);
-          }
-        };
+        return runAutomaton::run;
       }
       case LUCENE: {
         org.apache.lucene.util.automaton.RegExp regExp = new org.apache.lucene.util.automaton.RegExp(re);
         org.apache.lucene.util.automaton.Automaton automaton = regExp.toAutomaton(Integer.MAX_VALUE);
         final CharacterRunAutomaton runAutomaton = new CharacterRunAutomaton(automaton);
-        return new Matcher() {
-          @Override
-          public boolean match(String input) {
-            return runAutomaton.run(input);
-          }
-        };
+        return runAutomaton::run;
       }
       default:
         throw new IllegalStateException("Can't handle " + implementation);

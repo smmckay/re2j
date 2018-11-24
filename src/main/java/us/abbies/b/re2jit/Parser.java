@@ -12,8 +12,6 @@
 package us.abbies.b.re2jit;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * A parser of regular expression patterns.
@@ -1700,7 +1698,7 @@ class Parser {
     }
 
     static <F, S> Pair<F, S> of(F first, S second) {
-      return new Pair<F, S>(first, second);
+      return new Pair<>(first, second);
     }
   }
 

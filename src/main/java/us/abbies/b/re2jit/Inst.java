@@ -10,7 +10,7 @@ package us.abbies.b.re2jit;
 /**
  * A single instruction in the regular expression virtual machine.
  *
- * @see http://swtch.com/~rsc/regexp/regexp2.html
+ * @see <a href="http://swtch.com/~rsc/regexp/regexp2.html">http://swtch.com/~rsc/regexp/regexp2.html</a>
  */
 final class Inst {
 

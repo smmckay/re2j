@@ -17,7 +17,7 @@ class Compiler {
   /**
    * A fragment of a compiled regular expression program.
    *
-   * @see http://swtch.com/~rsc/regexp/regexp1.html
+   * @see <a href="http://swtch.com/~rsc/regexp/regexp1.html">http://swtch.com/~rsc/regexp/regexp1.html</a>
    */
   private static class Frag {
     final int i; // an instruction address (pc).

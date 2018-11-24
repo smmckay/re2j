@@ -77,7 +77,7 @@ class Simplify {
 
             // General case: x{4,} is xxxx+.
             Regexp nre = new Regexp(Regexp.Op.CONCAT);
-            ArrayList<Regexp> subs = new ArrayList<Regexp>();
+            ArrayList<Regexp> subs = new ArrayList<>();
             for (int i = 0; i < re.min - 1; i++) {
               subs.add(sub);
             }
@@ -100,7 +100,7 @@ class Simplify {
           // Build leading prefix: xx.
           ArrayList<Regexp> prefixSubs = null;
           if (re.min > 0) {
-            prefixSubs = new ArrayList<Regexp>();
+            prefixSubs = new ArrayList<>();
             for (int i = 0; i < re.min; i++) {
               prefixSubs.add(sub);
             }

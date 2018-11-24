@@ -19,6 +19,7 @@
 package us.abbies.b.re2jit;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -112,7 +113,7 @@ class RE2 {
 
   // Cache of machines for running regexp.
   // Accesses must be serialized using |this| monitor.
-  private final List<Machine> machine = new ArrayList<Machine>();
+  private final List<Machine> machine = new ArrayList<>();
 
   // This is visible for testing.
   RE2(String expr) {
@@ -184,11 +185,7 @@ class RE2 {
     StringBuilder prefixBuilder = new StringBuilder();
     re2.prefixComplete = prog.prefix(prefixBuilder);
     re2.prefix = prefixBuilder.toString();
-    try {
-      re2.prefixUTF8 = re2.prefix.getBytes("UTF-8");
-    } catch (UnsupportedEncodingException e) {
-      throw new IllegalStateException("can't happen");
-    }
+    re2.prefixUTF8 = re2.prefix.getBytes(StandardCharsets.UTF_8);
     if (!re2.prefix.isEmpty()) {
       re2.prefixRune = re2.prefix.codePointAt(0);
     }
@@ -316,15 +313,7 @@ class RE2 {
    */
   // This is visible for testing.
   String replaceAll(String src, final String repl) {
-    return replaceAllFunc(
-        src,
-        new ReplaceFunc() {
-          @Override
-          public String replace(String orig) {
-            return repl;
-          }
-        },
-        2 * src.length() + 1);
+    return replaceAllFunc(src, orig -> repl, 2 * src.length() + 1);
     // TODO(afrozm): Is the reasoning correct, there can be at the most 2*len +1
     // replacements. Basically [a-z]*? abc x will be xaxbcx. So should it be
     // len + 1 or 2*len + 1.
@@ -337,15 +326,7 @@ class RE2 {
    */
   // This is visible for testing.
   String replaceFirst(String src, final String repl) {
-    return replaceAllFunc(
-        src,
-        new ReplaceFunc() {
-          @Override
-          public String replace(String orig) {
-            return repl;
-          }
-        },
-        1);
+    return replaceAllFunc(src, orig -> repl, 1);
   }
 
   /**
@@ -680,16 +661,8 @@ class RE2 {
    */
   // This is visible for testing.
   List<byte[]> findAllUTF8(final byte[] b, int n) {
-    final List<byte[]> result = new ArrayList<byte[]>();
-    allMatches(
-        MachineInput.fromUTF8(b),
-        n,
-        new DeliverFunc() {
-          @Override
-          public void deliver(int[] match) {
-            result.add(Utils.subarray(b, match[0], match[1]));
-          }
-        });
+    final List<byte[]> result = new ArrayList<>();
+    allMatches(MachineInput.fromUTF8(b), n, match -> result.add(Utils.subarray(b, match[0], match[1])));
     if (result.isEmpty()) {
       return null;
     }
@@ -706,16 +679,8 @@ class RE2 {
    */
   // This is visible for testing.
   List<int[]> findAllUTF8Index(final byte[] b, int n) {
-    final List<int[]> result = new ArrayList<int[]>();
-    allMatches(
-        MachineInput.fromUTF8(b),
-        n,
-        new DeliverFunc() {
-          @Override
-          public void deliver(int[] match) {
-            result.add(Utils.subarray(match, 0, 2));
-          }
-        });
+    final List<int[]> result = new ArrayList<>();
+    allMatches(MachineInput.fromUTF8(b), n, match -> result.add(Utils.subarray(match, 0, 2)));
     if (result.isEmpty()) {
       return null;
     }
@@ -732,16 +697,8 @@ class RE2 {
    */
   // This is visible for testing.
   List<String> findAll(final String s, int n) {
-    final List<String> result = new ArrayList<String>();
-    allMatches(
-        MachineInput.fromUTF16(s),
-        n,
-        new DeliverFunc() {
-          @Override
-          public void deliver(int[] match) {
-            result.add(s.substring(match[0], match[1]));
-          }
-        });
+    final List<String> result = new ArrayList<>();
+    allMatches(MachineInput.fromUTF16(s), n, match -> result.add(s.substring(match[0], match[1])));
     if (result.isEmpty()) {
       return null;
     }
@@ -758,16 +715,8 @@ class RE2 {
    */
   // This is visible for testing.
   List<int[]> findAllIndex(String s, int n) {
-    final List<int[]> result = new ArrayList<int[]>();
-    allMatches(
-        MachineInput.fromUTF16(s),
-        n,
-        new DeliverFunc() {
-          @Override
-          public void deliver(int[] match) {
-            result.add(Utils.subarray(match, 0, 2));
-          }
-        });
+    final List<int[]> result = new ArrayList<>();
+    allMatches(MachineInput.fromUTF16(s), n, match -> result.add(Utils.subarray(match, 0, 2)));
     if (result.isEmpty()) {
       return null;
     }
@@ -784,22 +733,19 @@ class RE2 {
    */
   // This is visible for testing.
   List<byte[][]> findAllUTF8Submatch(final byte[] b, int n) {
-    final List<byte[][]> result = new ArrayList<byte[][]>();
+    final List<byte[][]> result = new ArrayList<>();
     allMatches(
         MachineInput.fromUTF8(b),
         n,
-        new DeliverFunc() {
-          @Override
-          public void deliver(int[] match) {
-            byte[][] slice = new byte[match.length / 2][];
-            for (int j = 0; j < slice.length; ++j) {
-              if (match[2 * j] >= 0) {
-                slice[j] = Utils.subarray(b, match[2 * j], match[2 * j + 1]);
+            match -> {
+              byte[][] slice = new byte[match.length / 2][];
+              for (int j = 0; j < slice.length; ++j) {
+                if (match[2 * j] >= 0) {
+                  slice[j] = Utils.subarray(b, match[2 * j], match[2 * j + 1]);
+                }
               }
-            }
-            result.add(slice);
-          }
-        });
+              result.add(slice);
+            });
     if (result.isEmpty()) {
       return null;
     }
@@ -816,16 +762,8 @@ class RE2 {
    */
   // This is visible for testing.
   List<int[]> findAllUTF8SubmatchIndex(byte[] b, int n) {
-    final List<int[]> result = new ArrayList<int[]>();
-    allMatches(
-        MachineInput.fromUTF8(b),
-        n,
-        new DeliverFunc() {
-          @Override
-          public void deliver(int[] match) {
-            result.add(match);
-          }
-        });
+    final List<int[]> result = new ArrayList<>();
+    allMatches(MachineInput.fromUTF8(b), n, result::add);
     if (result.isEmpty()) {
       return null;
     }
@@ -842,22 +780,19 @@ class RE2 {
    */
   // This is visible for testing.
   List<String[]> findAllSubmatch(final String s, int n) {
-    final List<String[]> result = new ArrayList<String[]>();
+    final List<String[]> result = new ArrayList<>();
     allMatches(
         MachineInput.fromUTF16(s),
         n,
-        new DeliverFunc() {
-          @Override
-          public void deliver(int[] match) {
-            String[] slice = new String[match.length / 2];
-            for (int j = 0; j < slice.length; ++j) {
-              if (match[2 * j] >= 0) {
-                slice[j] = s.substring(match[2 * j], match[2 * j + 1]);
+            match -> {
+              String[] slice = new String[match.length / 2];
+              for (int j = 0; j < slice.length; ++j) {
+                if (match[2 * j] >= 0) {
+                  slice[j] = s.substring(match[2 * j], match[2 * j + 1]);
+                }
               }
-            }
-            result.add(slice);
-          }
-        });
+              result.add(slice);
+            });
     if (result.isEmpty()) {
       return null;
     }
@@ -874,16 +809,8 @@ class RE2 {
    */
   // This is visible for testing.
   List<int[]> findAllSubmatchIndex(String s, int n) {
-    final List<int[]> result = new ArrayList<int[]>();
-    allMatches(
-        MachineInput.fromUTF16(s),
-        n,
-        new DeliverFunc() {
-          @Override
-          public void deliver(int[] match) {
-            result.add(match);
-          }
-        });
+    final List<int[]> result = new ArrayList<>();
+    allMatches(MachineInput.fromUTF16(s), n, result::add);
     if (result.isEmpty()) {
       return null;
     }
