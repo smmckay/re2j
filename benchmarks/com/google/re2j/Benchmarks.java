@@ -47,6 +47,7 @@ import static org.junit.Assert.fail;
 public class Benchmarks {
   private enum Implementation {
     RE2J,
+    RE2JIT,
     JDK,
     AUTOMATON,
     AUTOMATON_RUN,
@@ -105,6 +106,15 @@ public class Benchmarks {
       }
       case RE2J: {
         final com.google.re2j.Pattern p = com.google.re2j.Pattern.compile(re);
+        return new Matcher() {
+          @Override
+          public boolean match(String input) {
+            return p.matcher(input).matches();
+          }
+        };
+      }
+      case RE2JIT: {
+        final us.abbies.b.re2jit.Pattern p = us.abbies.b.re2jit.Pattern.compile(re);
         return new Matcher() {
           @Override
           public boolean match(String input) {

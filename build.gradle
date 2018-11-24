@@ -84,6 +84,7 @@ dependencies {
   benchmarksCompile 'com.google.caliper:caliper:1.0-beta-2'
   benchmarksCompile 'dk.brics:automaton:1.12-1'
   benchmarksCompile 'org.apache.lucene:lucene-core:7.5.0'
+  benchmarksCompile 'com.google.re2j:re2j:1.2'
 }
 
 // Use error_prone_core 2.0.5, later versions require Java 8 to build and we'd
