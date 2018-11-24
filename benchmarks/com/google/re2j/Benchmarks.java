@@ -15,6 +15,10 @@ import com.google.caliper.Benchmark;
 import com.google.caliper.Param;
 import com.google.caliper.api.VmOptions;
 import com.google.caliper.runner.CaliperMain;
+import dk.brics.automaton.Automaton;
+import dk.brics.automaton.RegExp;
+import dk.brics.automaton.RunAutomaton;
+import org.apache.lucene.util.automaton.CharacterRunAutomaton;
 
 import java.util.regex.Pattern;
 
@@ -43,10 +47,13 @@ import static org.junit.Assert.fail;
 public class Benchmarks {
   private enum Implementation {
     RE2J,
-    JDK
+    JDK,
+    AUTOMATON,
+    AUTOMATON_RUN,
+    LUCENE
   }
 
-  @Param({"RE2J", "JDK"})
+  @Param({"RE2J", "JDK", "AUTOMATON", "AUTOMATON_RUN", "LUCENE"})
   private Implementation implementation;
 
   private static final String LONG_DATA;
@@ -64,62 +71,81 @@ public class Benchmarks {
   private Matcher notLiteral;
   private Matcher matchClassMatcher;
   private Matcher inRangeMatchClassMatcher;
-  private Matcher replaceAllMatcher;
   private Matcher anchoredLiteralNonMatchingMatcher;
-  private Matcher longAnchoredLiteralMatchingMatcher;
   private Matcher anchoredMatchingMatcher;
 
   private interface Matcher {
     boolean match(String input);
-
-    String replaceAll(String input, String replacement);
   }
 
   @BeforeExperiment
   public void setupExpressions() {
     pathologicalBacktracking =
         compile("a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?" + "aaaaaaaaaaaaaaaaaaaaaaaa");
-    literal = compile("y");
-    notLiteral = compile(".y");
-    matchClassMatcher = compile("[abcdw]");
-    inRangeMatchClassMatcher = compile("[ac]");
-    replaceAllMatcher = compile("[cjrw]");
-    anchoredLiteralNonMatchingMatcher = compile("^zbc(d|e)");
-    anchoredMatchingMatcher = compile("^.bc(d|e)");
+    literal = compile(".*y");
+    notLiteral = compile(".*.y");
+    matchClassMatcher = compile(".*[abcdw]");
+    inRangeMatchClassMatcher = compile(".*[ac]");
+    anchoredLiteralNonMatchingMatcher = compile("zbc(d|e).*");
+    anchoredMatchingMatcher = compile(".bc(d|e).*");
 
     System.gc();
   }
 
   private Matcher compile(String re) {
-    if (implementation == Implementation.JDK) {
-      // The JDK implementation appears dramatically faster for these
-      // inputs, possibly due to its use of right-to-left matching via
-      // Boyer-Moore for anchored patterns. We should totally do that.
-      final Pattern p = Pattern.compile(re);
-      return new Matcher() {
-        @Override
-        public boolean match(String input) {
-          return p.matcher(input).find();
-        }
-
-        @Override
-        public String replaceAll(String input, String replacement) {
-          return p.matcher(input).replaceAll(replacement);
-        }
-      };
-    } else { // com.google.re2
-      final com.google.re2j.Pattern p = com.google.re2j.Pattern.compile(re);
-      return new Matcher() {
-        @Override
-        public boolean match(String input) {
-          return p.matcher(input).find();
-        }
-
-        @Override
-        public String replaceAll(String input, String replacement) {
-          return p.matcher(input).replaceAll(replacement);
-        }
-      };
+    switch (implementation) {
+      case JDK: {
+        final Pattern p = Pattern.compile(re);
+        return new Matcher() {
+          @Override
+          public boolean match(String input) {
+            return p.matcher(input).matches();
+          }
+        };
+      }
+      case RE2J: {
+        final com.google.re2j.Pattern p = com.google.re2j.Pattern.compile(re);
+        return new Matcher() {
+          @Override
+          public boolean match(String input) {
+            return p.matcher(input).matches();
+          }
+        };
+      }
+      case AUTOMATON: {
+        RegExp regExp = new RegExp(re);
+        final Automaton automaton = regExp.toAutomaton();
+        return new Matcher() {
+          @Override
+          public boolean match(String input) {
+            return automaton.run(input);
+          }
+        };
+      }
+      case AUTOMATON_RUN: {
+        RegExp regExp = new RegExp(re);
+        Automaton automaton = regExp.toAutomaton();
+        final RunAutomaton runAutomaton = new RunAutomaton(automaton);
+        return new Matcher() {
+          @Override
+          public boolean match(String input) {
+            return runAutomaton.run(input);
+          }
+        };
+      }
+      case LUCENE: {
+        org.apache.lucene.util.automaton.RegExp regExp = new org.apache.lucene.util.automaton.RegExp(re);
+        org.apache.lucene.util.automaton.Automaton automaton = regExp.toAutomaton(Integer.MAX_VALUE);
+        final CharacterRunAutomaton runAutomaton = new CharacterRunAutomaton(automaton);
+        return new Matcher() {
+          @Override
+          public boolean match(String input) {
+            return runAutomaton.run(input);
+          }
+        };
+      }
+      default:
+        throw new IllegalStateException("Can't handle " + implementation);
     }
   }
 
@@ -135,9 +161,9 @@ public class Benchmarks {
   // http://code.google.com/p/go/source/browse/src/pkg/regexp/all_test.go
 
   @Benchmark
-  public void benchmarkLiteral(int nreps) {
+  public void benchmarkLiteral(long nreps) {
     String x = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxy";
-    for (int i = 0; i < nreps; i++) {
+    for (long i = 0; i < nreps; i++) {
       if (!literal.match(x)) {
         fail("no match!");
       }
@@ -145,9 +171,9 @@ public class Benchmarks {
   }
 
   @Benchmark
-  public void benchmarkNotLiteral(int nreps) {
+  public void benchmarkNotLiteral(long nreps) {
     String x = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxy";
-    for (int i = 0; i < nreps; i++) {
+    for (long i = 0; i < nreps; i++) {
       if (!notLiteral.match(x)) {
         fail("no match!");
       }
@@ -155,12 +181,12 @@ public class Benchmarks {
   }
 
   @Benchmark
-  public void benchmarkMatchClass(int nreps) {
+  public void benchmarkMatchClass(long nreps) {
     String x =
         "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
             + "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
             + "w";
-    for (int i = 0; i < nreps; i++) {
+    for (long i = 0; i < nreps; i++) {
       if (!matchClassMatcher.match(x)) {
         fail("no match!");
       }
@@ -168,14 +194,14 @@ public class Benchmarks {
   }
 
   @Benchmark
-  public void benchmarkMatchClass_InRange(int nreps) {
+  public void benchmarkMatchClass_InRange(long nreps) {
     // 'b' is between 'a' and 'c', so the charclass
     // range checking is no help here.
     String x =
         "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
             + "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
             + "c";
-    for (int i = 0; i < nreps; i++) {
+    for (long i = 0; i < nreps; i++) {
       if (!inRangeMatchClassMatcher.match(x)) {
         fail("no match!");
       }
@@ -183,40 +209,40 @@ public class Benchmarks {
   }
 
   @Benchmark
-  public void benchmarkReplaceAll(int nreps) {
+  public void benchmarkAnchoredLiteralShortNonMatch(long nreps) {
     String x = "abcdefghijklmnopqrstuvwxyz";
-    for (int i = 0; i < nreps; i++) {
-      replaceAllMatcher.replaceAll(x, "");
+    for (long i = 0; i < nreps; i++) {
+      if (anchoredLiteralNonMatchingMatcher.match(x)) {
+        fail("match!");
+      }
     }
   }
 
   @Benchmark
-  public void benchmarkAnchoredLiteralShortNonMatch(int nreps) {
+  public void benchmarkAnchoredLiteralLongNonMatch(long nreps) {
+    for (long i = 0; i < nreps; i++) {
+      if (anchoredLiteralNonMatchingMatcher.match(LONG_DATA)) {
+        fail("match!");
+      }
+    }
+  }
+
+  @Benchmark
+  public void benchmarkAnchoredShortMatch(long nreps) {
     String x = "abcdefghijklmnopqrstuvwxyz";
-    for (int i = 0; i < nreps; i++) {
-      anchoredLiteralNonMatchingMatcher.match(x);
+    for (long i = 0; i < nreps; i++) {
+      if (!anchoredMatchingMatcher.match(x)) {
+        fail("no match!");
+      }
     }
   }
 
   @Benchmark
-  public void benchmarkAnchoredLiteralLongNonMatch(int nreps) {
-    for (int i = 0; i < nreps; i++) {
-      anchoredLiteralNonMatchingMatcher.match(LONG_DATA);
-    }
-  }
-
-  @Benchmark
-  public void benchmarkAnchoredShortMatch(int nreps) {
-    String x = "abcdefghijklmnopqrstuvwxyz";
-    for (int i = 0; i < nreps; i++) {
-      anchoredMatchingMatcher.match(x);
-    }
-  }
-
-  @Benchmark
-  public void benchmarkAnchoredLongMatch(int nreps) {
-    for (int i = 0; i < nreps; i++) {
-      anchoredMatchingMatcher.match(LONG_DATA);
+  public void benchmarkAnchoredLongMatch(long nreps) {
+    for (long i = 0; i < nreps; i++) {
+      if (!anchoredMatchingMatcher.match(LONG_DATA)) {
+        fail("no match!");
+      }
     }
   }
 

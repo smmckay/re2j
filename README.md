@@ -1,8 +1,8 @@
 RE2/J: linear time regular expression matching in Java
 ======================================================
 
-[![Build Status](https://travis-ci.org/google/re2j.svg?branch=master)](https://travis-ci.org/google/re2j)
-[![Coverage Status](https://coveralls.io/repos/github/google/re2j/badge.svg)](https://coveralls.io/github/google/re2j)
+[![Build Status](https://travis-ci.com/smmckay/re2jit.svg?branch=master)](https://travis-ci.com/smmckay/re2jit)
+[![Coverage Status](https://coveralls.io/repos/github/smmckay/re2jit/badge.svg?branch=master)](https://coveralls.io/github/smmckay/re2jit?branch=master)
 
 RE2 is a regular expression engine that runs in time linear in the size of the
 input. RE2/J is a port of RE2 to pure Java.
