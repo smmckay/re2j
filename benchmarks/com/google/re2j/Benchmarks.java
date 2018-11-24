@@ -18,6 +18,7 @@ import com.google.caliper.runner.CaliperMain;
 import dk.brics.automaton.Automaton;
 import dk.brics.automaton.RegExp;
 import dk.brics.automaton.RunAutomaton;
+import org.apache.lucene.util.automaton.CharacterRunAutomaton;
 
 import java.util.regex.Pattern;
 
@@ -48,10 +49,11 @@ public class Benchmarks {
     RE2J,
     JDK,
     AUTOMATON,
-    AUTOMATON_RUN
+    AUTOMATON_RUN,
+    LUCENE
   }
 
-  @Param({"RE2J", "JDK", "AUTOMATON", "AUTOMATON_RUN"})
+  @Param({"RE2J", "JDK", "AUTOMATON", "AUTOMATON_RUN", "LUCENE"})
   private Implementation implementation;
 
   private static final String LONG_DATA;
@@ -124,6 +126,17 @@ public class Benchmarks {
         RegExp regExp = new RegExp(re);
         Automaton automaton = regExp.toAutomaton();
         final RunAutomaton runAutomaton = new RunAutomaton(automaton);
+        return new Matcher() {
+          @Override
+          public boolean match(String input) {
+            return runAutomaton.run(input);
+          }
+        };
+      }
+      case LUCENE: {
+        org.apache.lucene.util.automaton.RegExp regExp = new org.apache.lucene.util.automaton.RegExp(re);
+        org.apache.lucene.util.automaton.Automaton automaton = regExp.toAutomaton(Integer.MAX_VALUE);
+        final CharacterRunAutomaton runAutomaton = new CharacterRunAutomaton(automaton);
         return new Matcher() {
           @Override
           public boolean match(String input) {
