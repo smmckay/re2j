@@ -1,14 +1,12 @@
 plugins {
   id 'java-library'
   id 'wrapper'
-  id 'com.jfrog.bintray' version '1.7.3'
+  id 'com.jfrog.bintray' version '1.8.4'
   id 'maven-publish'
-  id 'net.ltgt.errorprone' version '0.0.11'
-  id 'idea'
 
-  // code coverage support
   id 'net.saliman.cobertura' version '2.5.4'
   id 'com.github.kt3k.coveralls' version '2.8.2'
+  id 'com.diffplug.gradle.spotless' version '3.16.0'
 }
 
 cobertura.coverageFormats = ['html', 'xml']
@@ -17,39 +15,38 @@ cobertura.coverageFormats = ['html', 'xml']
 def versionName = '1.2'
 
 wrapper {
-  gradleVersion '4.9'
+  gradleVersion '4.10.2'
 }
 
-sourceCompatibility = 1.6
-targetCompatibility = 1.6
+sourceCompatibility = 8
+targetCompatibility = 8
 
 repositories {
   mavenCentral()
 }
 
+spotless {
+    encoding 'UTF-8'
+
+    java {
+        importOrder 'java', 'javax', ''	// A sequence of package names
+
+        removeUnusedImports()
+
+        eclipse().configFile('spotless.eclipseformat.xml') // XML file dumped out by the Eclipse formatter
+        // Eclipse formatter puts excess whitespace after lambda blocks
+        //    funcThatTakesLambdas(x -> {} , y -> {} )	// what Eclipse does
+        //    funcThatTakesLambdas(x -> {}, y -> {})	// what I wish Eclipse did
+        custom 'Lambda fix', { it.replace('} )', '})').replace('} ,', '},') }
+    }
+}
+
 sourceSets {
-  main {
-    java {
-      srcDir 'java'
-    }
-  }
-  test {
-    java {
-      srcDir 'javatests'
-    }
-    resources {
-      srcDir 'testdata'
-    }
-  }
   // Having a separate source set for benchmarks allows us to declare benchmark dependencies
   // separately from the rest of the project. This is useful because as of today (May 2018),
   // Caliper (which runs our benchmarks) has a very old Guava dependency which causes problems
   // for the rest of our test code.
-  benchmarks {
-    java {
-      srcDir 'benchmarks'
-    }
-  }
+  benchmarks
 }
 
 tasks.withType(JavaCompile) {
@@ -77,24 +74,19 @@ dependencies {
   testCompile 'com.google.truth:truth:0.36'
 
   // Cobertura requires slf4j at runtime
-  testRuntime "org.slf4j:slf4j-api:1.7.10"
+  testRuntime 'org.slf4j:slf4j-api:1.7.10'
 
   benchmarksCompile project
   benchmarksCompile 'junit:junit:4.12'
   benchmarksCompile 'com.google.caliper:caliper:1.0-beta-2'
   benchmarksCompile 'dk.brics:automaton:1.12-1'
   benchmarksCompile 'org.apache.lucene:lucene-core:7.5.0'
-}
-
-// Use error_prone_core 2.0.5, later versions require Java 8 to build and we'd
-// like to support building on Java 7.
-configurations.errorprone {
-  resolutionStrategy.force 'com.google.errorprone:error_prone_core:2.0.5'
+  benchmarksCompile 'com.google.re2j:re2j:1.2'
 }
 
 task benchmarks(type: JavaExec) {
   classpath = configurations.benchmarksRuntime + sourceSets.benchmarks.output
-  main = 'com.google.re2j.Benchmarks'
+  main = 'us.abbies.b.re2jit.Benchmarks'
 }
 
 def releaseVersion = '1.2'
