@@ -4,9 +4,12 @@ plugins {
   id 'com.jfrog.bintray' version '1.8.4'
   id 'maven-publish'
 
+  id 'net.saliman.cobertura' version '2.5.4'
   id 'com.github.kt3k.coveralls' version '2.8.2'
   id 'com.diffplug.gradle.spotless' version '3.16.0'
 }
+
+cobertura.coverageFormats = ['html', 'xml']
 
 // The name of the release we're working on. See RELEASING.md for details.
 def versionName = '1.2'
@@ -24,7 +27,7 @@ repositories {
 
 spotless {
     encoding 'UTF-8'
-    
+
     java {
         importOrder 'java', 'javax', ''	// A sequence of package names
 
@@ -34,7 +37,7 @@ spotless {
         // Eclipse formatter puts excess whitespace after lambda blocks
         //    funcThatTakesLambdas(x -> {} , y -> {} )	// what Eclipse does
         //    funcThatTakesLambdas(x -> {}, y -> {})	// what I wish Eclipse did
-        custom 'Lambda fix', { it.replace('} )', '})').replace('} ,', '},') } 
+        custom 'Lambda fix', { it.replace('} )', '})').replace('} ,', '},') }
     }
 }
 
@@ -69,6 +72,9 @@ configurations.benchmarksCompile {
 dependencies {
   testCompile 'junit:junit:4.12'
   testCompile 'com.google.truth:truth:0.36'
+
+  // Cobertura requires slf4j at runtime
+  testRuntime 'org.slf4j:slf4j-api:1.7.10'
 
   benchmarksCompile project
   benchmarksCompile 'junit:junit:4.12'
