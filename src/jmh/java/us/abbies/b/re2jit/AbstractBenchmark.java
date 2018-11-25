@@ -29,7 +29,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
  * <pre>
  *   ./gradlew benchmarks
  * </pre>
- *
+ * <p>
  * from the project root directory. You can pass arguments to the benchmark program using the following invocation of
  * {@code gradlew}:
  *
@@ -60,43 +60,43 @@ public abstract class AbstractBenchmark {
     @Setup
     public void setup() {
         switch (implementation) {
-            case JDK: {
-                final Pattern p = Pattern.compile(re);
-                matcher = input -> p.matcher(input).matches();
-            }
+        case JDK: {
+            final Pattern p = Pattern.compile(re);
+            matcher = input -> p.matcher(input).matches();
+        }
             break;
-            case RE2J: {
-                final com.google.re2j.Pattern p = com.google.re2j.Pattern.compile(re);
-                matcher = input -> p.matcher(input).matches();
-            }
+        case RE2J: {
+            final com.google.re2j.Pattern p = com.google.re2j.Pattern.compile(re);
+            matcher = input -> p.matcher(input).matches();
+        }
             break;
-            case RE2JIT: {
-                final us.abbies.b.re2jit.Pattern p = us.abbies.b.re2jit.Pattern.compile(re);
-                matcher = input -> p.matcher(input).matches();
-            }
+        case RE2JIT: {
+            final us.abbies.b.re2jit.Pattern p = us.abbies.b.re2jit.Pattern.compile(re);
+            matcher = input -> p.matcher(input).matches();
+        }
             break;
-            case AUTOMATON: {
-                RegExp regExp = new RegExp(re);
-                final Automaton automaton = regExp.toAutomaton();
-                matcher = automaton::run;
-            }
+        case AUTOMATON: {
+            RegExp regExp = new RegExp(re);
+            final Automaton automaton = regExp.toAutomaton();
+            matcher = automaton::run;
+        }
             break;
-            case AUTOMATON_RUN: {
-                RegExp regExp = new RegExp(re);
-                Automaton automaton = regExp.toAutomaton();
-                final RunAutomaton runAutomaton = new RunAutomaton(automaton);
-                matcher = runAutomaton::run;
-            }
+        case AUTOMATON_RUN: {
+            RegExp regExp = new RegExp(re);
+            Automaton automaton = regExp.toAutomaton();
+            final RunAutomaton runAutomaton = new RunAutomaton(automaton);
+            matcher = runAutomaton::run;
+        }
             break;
-            case LUCENE: {
-                org.apache.lucene.util.automaton.RegExp regExp = new org.apache.lucene.util.automaton.RegExp(re);
-                org.apache.lucene.util.automaton.Automaton automaton = regExp.toAutomaton(Integer.MAX_VALUE);
-                final CharacterRunAutomaton runAutomaton = new CharacterRunAutomaton(automaton);
-                matcher = runAutomaton::run;
-            }
+        case LUCENE: {
+            org.apache.lucene.util.automaton.RegExp regExp = new org.apache.lucene.util.automaton.RegExp(re);
+            org.apache.lucene.util.automaton.Automaton automaton = regExp.toAutomaton(Integer.MAX_VALUE);
+            final CharacterRunAutomaton runAutomaton = new CharacterRunAutomaton(automaton);
+            matcher = runAutomaton::run;
+        }
             break;
-            default:
-                throw new IllegalStateException("Can't handle " + implementation);
+        default:
+            throw new IllegalStateException("Can't handle " + implementation);
         }
 
         assert matcher.test(text) != expectMatch;
@@ -109,7 +109,7 @@ public abstract class AbstractBenchmark {
 
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
-                //.include(AbstractBenchmark.class.getSimpleName())
+                // .include(AbstractBenchmark.class.getSimpleName())
                 .forks(1)
                 .build();
 
