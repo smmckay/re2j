@@ -3,10 +3,10 @@ plugins {
   id 'wrapper'
   id 'com.jfrog.bintray' version '1.8.4'
   id 'maven-publish'
-
   id 'net.saliman.cobertura' version '2.5.4'
   id 'com.github.kt3k.coveralls' version '2.8.2'
   id 'com.diffplug.gradle.spotless' version '3.16.0'
+  id 'me.champeau.gradle.jmh' version '0.4.7'
 }
 
 cobertura.coverageFormats = ['html', 'xml']
@@ -41,14 +41,6 @@ spotless {
     }
 }
 
-sourceSets {
-  // Having a separate source set for benchmarks allows us to declare benchmark dependencies
-  // separately from the rest of the project. This is useful because as of today (May 2018),
-  // Caliper (which runs our benchmarks) has a very old Guava dependency which causes problems
-  // for the rest of our test code.
-  benchmarks
-}
-
 tasks.withType(JavaCompile) {
   options.encoding = 'UTF-8'
 }
@@ -58,17 +50,6 @@ test {
   maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2).intValue() ?: 1
 }
 
-configurations.benchmarksCompile {
-  resolutionStrategy.eachDependency { DependencyResolveDetails details ->
-    if (details.requested.group == 'com.google.guava' && details.requested.name == 'guava') {
-      // Force guava 18.0, caliper:1.0-beta-2 requires it but truth:0.36 brings
-      // in a later version. This override can be removed when caliper is
-      // updated to a newer version.
-      details.useVersion '18.0'
-    }
-  }
-}
-
 dependencies {
   testCompile 'junit:junit:4.12'
   testCompile 'com.google.truth:truth:0.36'
@@ -76,17 +57,15 @@ dependencies {
   // Cobertura requires slf4j at runtime
   testRuntime 'org.slf4j:slf4j-api:1.7.10'
 
-  benchmarksCompile project
-  benchmarksCompile 'junit:junit:4.12'
-  benchmarksCompile 'com.google.caliper:caliper:1.0-beta-2'
-  benchmarksCompile 'dk.brics:automaton:1.12-1'
-  benchmarksCompile 'org.apache.lucene:lucene-core:7.5.0'
-  benchmarksCompile 'com.google.re2j:re2j:1.2'
+  jmh 'dk.brics:automaton:1.12-1'
+  jmh 'org.apache.lucene:lucene-core:7.5.0'
+  jmh 'com.google.re2j:re2j:1.2'
 }
 
-task benchmarks(type: JavaExec) {
-  classpath = configurations.benchmarksRuntime + sourceSets.benchmarks.output
-  main = 'us.abbies.b.re2jit.Benchmarks'
+jmh {
+  jvmArgs = ['-Djmh.separateClasspathJAR=true']
+  fork = 1
+  warmupIterations = 3
 }
 
 def releaseVersion = '1.2'
